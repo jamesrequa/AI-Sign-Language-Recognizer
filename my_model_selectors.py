@@ -159,3 +159,61 @@ class SelectorDIC(ModelSelector):
                     pass
 
         return self.base_model(best_n_state)
+
+
+
+class SelectorCV(ModelSelector):
+    ''' select best model based on average log Likelihood of cross-validation folds
+
+    '''
+
+    def select(self):
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+
+        best_kf_score = None
+        best_n_state = self.n_constant
+
+        for n_state in range(self.min_n_components, self.max_n_components + 1):
+            try:
+                scores = []
+                score = 0.0
+
+                if (len(self.sequences) > 1): #only use CV if there are at least 2 sequences
+                    # Generate K folds by choosing the min of either the num sequences (2) or 3
+                    folds = min(len(self.sequences),3)
+                    kf = KFold(shuffle=True, n_splits=folds)
+
+                    for cv_train_idx, cv_test_idx in kf.split(self.sequences):
+
+                        test_scores = []
+                        # Training data
+                        self.X, self.lengths = combine_sequences(cv_train_idx, self.sequences)
+
+                        # Testing data
+                        X_test, lengths_test = combine_sequences(cv_test_idx, self.sequences)
+
+                        # Fit model with training data
+                        model = GaussianHMM(n_components=n_state, covariance_type="diag", n_iter=1000,
+                                        random_state=self.random_state, verbose=False).fit(X_train, lengths_train)
+
+                        # Get the scores using test data
+                        test_scores.append(model.score(X_test,lengths_test))
+
+
+                    # Calculate the average score of all test scores which is the one we will use
+                    score = scores.append(np.mean(test_scores))
+
+                else:
+                    # If the length of sequence is less than 2 then then we can't use CV
+                    score = scores.append(np.mean(model.score(self.X, self.lengths)))
+
+                # Keep model with best score
+                if best_kf_score is None or best_kf_score < score:
+                    best_kf_score = score
+                    best_n_state = n_state
+
+            except:
+                pass
+
+        return self.base_model(best_n_state)
