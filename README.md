@@ -1,4 +1,4 @@
-# Sign Language Recognition System (in-progress)
+# Sign Language Recognition System
 
 In this project, I build a system that can recognize words communicated using the American Sign Language (ASL). I began the project with a preprocessed dataset of tracked hand and nose positions extracted from video. The goal was to train a set of Hidden Markov Models (HMMs) using part of this dataset to try and identify individual words from test sequences.
 
